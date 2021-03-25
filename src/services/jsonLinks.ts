@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { DocumentLink } from 'vscode-languageserver-types';
-import { TextDocument, ASTNode, PropertyASTNode, Range, Thenable } from '../jsonLanguageTypes';
+import {TextDocument, ASTNode, PropertyASTNode, Range, Thenable, DocumentContext} from '../jsonLanguageTypes';
 import { JSONDocument } from '../parser/jsonParser';
 
 export function findLinks(document: TextDocument, doc: JSONDocument): Thenable<DocumentLink[]> {

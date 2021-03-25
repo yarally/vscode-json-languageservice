@@ -23,7 +23,7 @@ import {
 	FoldingRange, JSONSchema, SelectionRange, FoldingRangesContext, DocumentSymbolsContext, ColorInformationContext as DocumentColorsContext,
 	TextDocument,
 	Position, CompletionItem, CompletionList, Hover, Range, SymbolInformation, Diagnostic,
-	TextEdit, FormattingOptions, DocumentSymbol, DefinitionLink, MatchingSchema
+	TextEdit, FormattingOptions, DocumentSymbol, DefinitionLink, MatchingSchema, DocumentContext
 } from './jsonLanguageTypes';
 import {findExternalReferences, findLinks, findLinks2} from './services/jsonLinks';
 import { DocumentLink } from 'vscode-languageserver-types';

@@ -329,3 +329,7 @@ export interface ColorInformationContext {
 export interface FormattingOptions extends LSPFormattingOptions {
 	insertFinalNewline?: boolean;
 }
+
+export interface DocumentContext {
+	resolveReference(ref: string, baseUrl: string): string | undefined;
+}
