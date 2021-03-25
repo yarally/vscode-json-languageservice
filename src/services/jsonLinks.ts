@@ -26,6 +26,36 @@ export function findLinks(document: TextDocument, doc: JSONDocument): Thenable<D
 	return Promise.resolve(links);
 }
 
+export function findLinks2(document: TextDocument, doc: JSONDocument, node: ASTNode): Thenable<DocumentLink[]> {
+	if (node.type === "property" && node.keyNode.value === "$ref" && node.valueNode?.type === 'string') {
+		const path = node.valueNode.value.split('#')[1];
+		const targetNode = findTargetNode(doc, path);
+		if (targetNode) {
+			const targetPos = document.positionAt(targetNode.offset);
+			return Promise.resolve([{
+				target: `${document.uri}#${targetPos.line + 1},${targetPos.character + 1}`,
+				range: createRange(document, node.valueNode)
+			}]);
+		}
+	}
+	return Promise.resolve([]);
+}
+
+export function findExternalReferences(document: TextDocument, doc: JSONDocument, documentContext: DocumentContext): Thenable<[string | undefined, ASTNode][]> {
+	const nodeReferences: [string | undefined, ASTNode][] = [];
+	doc.visit(node => {
+		if (node.type === "property" && node.keyNode.value === "$ref" && node.valueNode?.type === 'string') {
+			const path = node.valueNode.value;
+			const externalFile = path.split('#')[0];
+			if (externalFile) {
+				nodeReferences.push([documentContext.resolveReference(externalFile, document.uri), node]);
+			}
+		}
+		return true;
+	});
+	return Promise.resolve(nodeReferences);
+}
+
 function createRange(document: TextDocument, node: ASTNode): Range {
 	return Range.create(document.positionAt(node.offset + 1), document.positionAt(node.offset + node.length - 1));
 }

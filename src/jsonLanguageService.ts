@@ -25,7 +25,7 @@ import {
 	Position, CompletionItem, CompletionList, Hover, Range, SymbolInformation, Diagnostic,
 	TextEdit, FormattingOptions, DocumentSymbol, DefinitionLink, MatchingSchema
 } from './jsonLanguageTypes';
-import { findLinks } from './services/jsonLinks';
+import {findExternalReferences, findLinks, findLinks2} from './services/jsonLinks';
 import { DocumentLink } from 'vscode-languageserver-types';
 
 export type JSONDocument = {
@@ -53,6 +53,8 @@ export interface LanguageService {
 	getSelectionRanges(document: TextDocument, positions: Position[], doc: JSONDocument): SelectionRange[];
 	findDefinition(document: TextDocument, position: Position, doc: JSONDocument): Thenable<DefinitionLink[]>;
 	findLinks(document: TextDocument, doc: JSONDocument): Thenable<DocumentLink[]>;
+	findLinks2(document: TextDocument, doc: JSONDocument, node: ASTNode): Thenable<DocumentLink[]>;
+	findExternalReferences(document: TextDocument, doc: JSONDocument, documentContext: DocumentContext): Thenable<[string | undefined, ASTNode][]>;
 }
 
 
@@ -93,6 +95,8 @@ export function getLanguageService(params: LanguageServiceParams): LanguageServi
 		getSelectionRanges,
 		findDefinition: () => Promise.resolve([]),
 		findLinks,
+		findLinks2,
+		findExternalReferences,
 		format: (d, r, o) => {
 			let range: JSONCRange | undefined = undefined;
 			if (r) {
