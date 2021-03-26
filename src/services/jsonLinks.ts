@@ -3,9 +3,18 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { DocumentLink } from 'vscode-languageserver-types';
-import {TextDocument, ASTNode, PropertyASTNode, Range, Thenable, DocumentContext} from '../jsonLanguageTypes';
-import { JSONDocument } from '../parser/jsonParser';
+import {DocumentLink} from 'vscode-languageserver-types';
+import {
+	ASTNode,
+	DocumentContext,
+	JsonExternalReference,
+	JsonNodeUri,
+	PropertyASTNode,
+	Range,
+	TextDocument,
+	Thenable
+} from '../jsonLanguageTypes';
+import {JSONDocument} from '../parser/jsonParser';
 
 export function findLinks(document: TextDocument, doc: JSONDocument): Thenable<DocumentLink[]> {
 	const links: DocumentLink[] = [];
@@ -26,29 +35,49 @@ export function findLinks(document: TextDocument, doc: JSONDocument): Thenable<D
 	return Promise.resolve(links);
 }
 
-export function findLinks2(document: TextDocument, doc: JSONDocument, node: ASTNode): Thenable<DocumentLink[]> {
-	if (node.type === "property" && node.keyNode.value === "$ref" && node.valueNode?.type === 'string') {
-		const path = node.valueNode.value.split('#')[1];
-		const targetNode = findTargetNode(doc, path);
-		if (targetNode) {
-			const targetPos = document.positionAt(targetNode.offset);
-			return Promise.resolve([{
-				target: `${document.uri}#${targetPos.line + 1},${targetPos.character + 1}`,
-				range: createRange(document, node.valueNode)
-			}]);
+export function findLinks2(document: TextDocument, doc: JSONDocument, externalReferences: JsonExternalReference[]): Thenable<DocumentLink[]> {
+	const links: DocumentLink[] = [];
+	doc.visit(node => {
+		if (node.type === "property" && node.keyNode.value === "$ref" && node.valueNode?.type === 'string') {
+			const path = node.valueNode.value;
+			const targetNode = findTargetNode(doc, path);
+			if (targetNode) {
+				const targetPos = document.positionAt(targetNode.offset);
+				links.push({
+					target: `${document.uri}#${targetPos.line + 1},${targetPos.character + 1}`,
+					range: createRange(document, node.valueNode)
+				});
+			}
+		}
+		return true;
+	});
+	for (const ref of externalReferences) {
+		if (ref.sourceNode.type === "property" && ref.sourceNode.keyNode.value === "$ref" && ref.sourceNode.valueNode?.type === 'string') {
+			const path = `#${ref.sourceNode.valueNode.value.split('#')[1]}`;
+			const targetNode = findTargetNode(ref.jsonDocument, path);
+			if (targetNode) {
+				const targetPos = ref.textDocument.positionAt(targetNode.offset);
+				links.push({
+					target: `${ref.textDocument.uri}#${targetPos.line + 1},${targetPos.character + 1}`,
+					range: createRange(document, ref.sourceNode.valueNode)
+				});
+			}
 		}
 	}
-	return Promise.resolve([]);
+	return Promise.resolve(links);
 }
 
-export function findExternalReferences(document: TextDocument, doc: JSONDocument, documentContext: DocumentContext): Thenable<[string | undefined, ASTNode][]> {
-	const nodeReferences: [string | undefined, ASTNode][] = [];
+export function findExternalReferences(document: TextDocument, doc: JSONDocument, documentContext: DocumentContext): Thenable<JsonNodeUri[]> {
+	const nodeReferences: JsonNodeUri[] = [];
 	doc.visit(node => {
 		if (node.type === "property" && node.keyNode.value === "$ref" && node.valueNode?.type === 'string') {
 			const path = node.valueNode.value;
 			const externalFile = path.split('#')[0];
 			if (externalFile) {
-				nodeReferences.push([documentContext.resolveReference(externalFile, document.uri), node]);
+				nodeReferences.push({
+					sourceNode: node,
+					uri: documentContext.resolveReference(externalFile, document.uri)
+			});
 			}
 		}
 		return true;

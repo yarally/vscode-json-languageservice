@@ -18,12 +18,34 @@ import { format as formatJSON, Range as JSONCRange } from 'jsonc-parser';
 import {
 	Thenable,
 	ASTNode,
-	Color, ColorInformation, ColorPresentation,
-	LanguageServiceParams, LanguageSettings, DocumentLanguageSettings,
-	FoldingRange, JSONSchema, SelectionRange, FoldingRangesContext, DocumentSymbolsContext, ColorInformationContext as DocumentColorsContext,
+	Color,
+	ColorInformation,
+	ColorPresentation,
+	LanguageServiceParams,
+	LanguageSettings,
+	DocumentLanguageSettings,
+	FoldingRange,
+	JSONSchema,
+	SelectionRange,
+	FoldingRangesContext,
+	DocumentSymbolsContext,
+	ColorInformationContext as DocumentColorsContext,
 	TextDocument,
-	Position, CompletionItem, CompletionList, Hover, Range, SymbolInformation, Diagnostic,
-	TextEdit, FormattingOptions, DocumentSymbol, DefinitionLink, MatchingSchema, DocumentContext
+	Position,
+	CompletionItem,
+	CompletionList,
+	Hover,
+	Range,
+	SymbolInformation,
+	Diagnostic,
+	TextEdit,
+	FormattingOptions,
+	DocumentSymbol,
+	DefinitionLink,
+	MatchingSchema,
+	DocumentContext,
+	JsonExternalReference,
+	JsonNodeUri
 } from './jsonLanguageTypes';
 import {findExternalReferences, findLinks, findLinks2} from './services/jsonLinks';
 import { DocumentLink } from 'vscode-languageserver-types';
@@ -53,8 +75,8 @@ export interface LanguageService {
 	getSelectionRanges(document: TextDocument, positions: Position[], doc: JSONDocument): SelectionRange[];
 	findDefinition(document: TextDocument, position: Position, doc: JSONDocument): Thenable<DefinitionLink[]>;
 	findLinks(document: TextDocument, doc: JSONDocument): Thenable<DocumentLink[]>;
-	findLinks2(document: TextDocument, doc: JSONDocument, node: ASTNode): Thenable<DocumentLink[]>;
-	findExternalReferences(document: TextDocument, doc: JSONDocument, documentContext: DocumentContext): Thenable<[string | undefined, ASTNode][]>;
+	findLinks2(document: TextDocument, doc: JSONDocument, externalReference: JsonExternalReference[]): Thenable<DocumentLink[]>;
+	findExternalReferences(document: TextDocument, doc: JSONDocument, documentContext: DocumentContext): Thenable<JsonNodeUri[]>;
 }
 
 

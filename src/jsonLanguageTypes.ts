@@ -14,6 +14,7 @@ import {
 } from 'vscode-languageserver-types';
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import {JSONDocument} from "./parser/jsonParser";
 
 export {
 	TextDocument,
@@ -332,4 +333,14 @@ export interface FormattingOptions extends LSPFormattingOptions {
 
 export interface DocumentContext {
 	resolveReference(ref: string, baseUrl: string): string | undefined;
+}
+
+export interface JsonNodeUri{
+	sourceNode: ASTNode;
+	uri: string | undefined;
+}
+export interface JsonExternalReference {
+	textDocument: TextDocument;
+	jsonDocument: JSONDocument;
+	sourceNode: ASTNode;
 }
