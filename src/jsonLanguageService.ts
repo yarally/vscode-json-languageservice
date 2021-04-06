@@ -94,7 +94,7 @@ export function getLanguageService(params: LanguageServiceParams): LanguageServi
 		getSelectionRanges,
 		findDefinition: () => Promise.resolve([]),
 		findLinks,
-		findLinks2,
+		findLinks2: (document, doc: InternalJSONDocument, documentContext) => findLinks2(document, doc, documentContext, jsonSchemaService),
 		format: (d, r, o) => {
 			let range: JSONCRange | undefined = undefined;
 			if (r) {

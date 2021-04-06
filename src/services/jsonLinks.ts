@@ -6,6 +6,7 @@
 import { DocumentLink } from 'vscode-languageserver-types';
 import { TextDocument, ASTNode, PropertyASTNode, Range, Thenable, DocumentContext } from '../jsonLanguageTypes';
 import { JSONDocument } from '../parser/jsonParser';
+import { JSONSchemaService, UnresolvedSchema } from "./jsonSchemaService";
 
 export function findLinks(document: TextDocument, doc: JSONDocument): Thenable<DocumentLink[]> {
 	const links: DocumentLink[] = [];
@@ -26,17 +27,27 @@ export function findLinks(document: TextDocument, doc: JSONDocument): Thenable<D
 	return Promise.resolve(links);
 }
 
-export function findLinks2(document: TextDocument, doc: JSONDocument, documentContext: DocumentContext): Thenable<DocumentLink[]> {
+export function findLinks2(document: TextDocument, doc: JSONDocument, documentContext: DocumentContext, jsonSchemaService: JSONSchemaService): Thenable<DocumentLink[]> {
 	const links: DocumentLink[] = [];
+	const unresolvedSchemas: Thenable<UnresolvedSchema>[] = [];
 	doc.visit(node => {
 		if (node.type === "property" && node.keyNode.value === "$ref" && node.valueNode?.type === 'string') {
 			const path = node.valueNode.value;
-			const externalLink = documentContext.resolveReference(path.split('#')[0], document.uri);
+			const externalLink = path.split('#')[0];
 			const targetNode = findTargetNode(doc, path);
 			if (externalLink) {
-				links.push({
-					range: createRange(document, node.valueNode)
-				});
+				const filePath = documentContext.resolveReference(path.split('#')[0], document.uri);
+				if (filePath) {
+					const unresolvedSchema = jsonSchemaService.registerExternalSchema(filePath).getUnresolvedSchema();
+					unresolvedSchemas.push(unresolvedSchema);
+					unresolvedSchema.then(ur => {
+						if (!ur.errors?.length && node.valueNode) {
+							links.push({
+								range: createRange(document, node.valueNode)
+							});
+						}
+					});
+				}
 			} else if (targetNode) {
 				const targetPos = document.positionAt(targetNode.offset);
 				links.push({
@@ -47,7 +58,11 @@ export function findLinks2(document: TextDocument, doc: JSONDocument, documentCo
 		}
 		return true;
 	});
-	return Promise.resolve(links);
+	return new Promise(((resolve) => {
+		Promise.all(unresolvedSchemas).then(() => {
+			resolve(links);
+		});
+	}));
 }
 
 function createRange(document: TextDocument, node: ASTNode): Range {
