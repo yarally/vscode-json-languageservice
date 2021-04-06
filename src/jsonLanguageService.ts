@@ -23,9 +23,9 @@ import {
 	FoldingRange, JSONSchema, SelectionRange, FoldingRangesContext, DocumentSymbolsContext, ColorInformationContext as DocumentColorsContext,
 	TextDocument,
 	Position, CompletionItem, CompletionList, Hover, Range, SymbolInformation, Diagnostic,
-	TextEdit, FormattingOptions, DocumentSymbol, DefinitionLink, MatchingSchema
+	TextEdit, FormattingOptions, DocumentSymbol, DefinitionLink, MatchingSchema, DocumentContext
 } from './jsonLanguageTypes';
-import { findLinks } from './services/jsonLinks';
+import { findLinks, findLinks2 } from './services/jsonLinks';
 import { DocumentLink } from 'vscode-languageserver-types';
 
 export type JSONDocument = {
@@ -53,6 +53,7 @@ export interface LanguageService {
 	getSelectionRanges(document: TextDocument, positions: Position[], doc: JSONDocument): SelectionRange[];
 	findDefinition(document: TextDocument, position: Position, doc: JSONDocument): Thenable<DefinitionLink[]>;
 	findLinks(document: TextDocument, doc: JSONDocument): Thenable<DocumentLink[]>;
+	findLinks2(document: TextDocument, doc: JSONDocument, documentContext: DocumentContext): Thenable<DocumentLink[]>;
 }
 
 
@@ -93,6 +94,7 @@ export function getLanguageService(params: LanguageServiceParams): LanguageServi
 		getSelectionRanges,
 		findDefinition: () => Promise.resolve([]),
 		findLinks,
+		findLinks2,
 		format: (d, r, o) => {
 			let range: JSONCRange | undefined = undefined;
 			if (r) {

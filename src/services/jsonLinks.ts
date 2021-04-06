@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { DocumentLink } from 'vscode-languageserver-types';
-import { TextDocument, ASTNode, PropertyASTNode, Range, Thenable } from '../jsonLanguageTypes';
+import { TextDocument, ASTNode, PropertyASTNode, Range, Thenable, DocumentContext } from '../jsonLanguageTypes';
 import { JSONDocument } from '../parser/jsonParser';
 
 export function findLinks(document: TextDocument, doc: JSONDocument): Thenable<DocumentLink[]> {
@@ -14,6 +14,30 @@ export function findLinks(document: TextDocument, doc: JSONDocument): Thenable<D
 			const path = node.valueNode.value;
 			const targetNode = findTargetNode(doc, path);
 			if (targetNode) {
+				const targetPos = document.positionAt(targetNode.offset);
+				links.push({
+					target: `${document.uri}#${targetPos.line + 1},${targetPos.character + 1}`,
+					range: createRange(document, node.valueNode)
+				});
+			}
+		}
+		return true;
+	});
+	return Promise.resolve(links);
+}
+
+export function findLinks2(document: TextDocument, doc: JSONDocument, documentContext: DocumentContext): Thenable<DocumentLink[]> {
+	const links: DocumentLink[] = [];
+	doc.visit(node => {
+		if (node.type === "property" && node.keyNode.value === "$ref" && node.valueNode?.type === 'string') {
+			const path = node.valueNode.value;
+			const externalLink = documentContext.resolveReference(path.split('#')[0], document.uri);
+			const targetNode = findTargetNode(doc, path);
+			if (externalLink) {
+				links.push({
+					range: createRange(document, node.valueNode)
+				});
+			} else if (targetNode) {
 				const targetPos = document.positionAt(targetNode.offset);
 				links.push({
 					target: `${document.uri}#${targetPos.line + 1},${targetPos.character + 1}`,
